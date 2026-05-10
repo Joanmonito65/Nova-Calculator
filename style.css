@@ -1,0 +1,133 @@
+  display: flex;
+  align-items: center;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: 850;
+}
+
+.history-toolbar {
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.text-button {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  color: var(--danger);
+  font-weight: 800;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+  max-height: 600px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.history-item {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.history-expression {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.history-answer {
+  color: var(--ink);
+  font-size: 1.28rem;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 820px) {
+  .app-shell {
+    padding: 12px;
+    place-items: stretch;
+  }
+
+  .calculator {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "top"
+      "display"
+      "tabs"
+      "panel";
+    gap: 14px;
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .display {
+    min-height: 230px;
+  }
+
+  .key {
+    min-height: 60px;
+    border-radius: 14px;
+  }
+
+  .scientific-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .scientific-grid .operator,
+  .scientific-grid .equals {
+    grid-column: span 1;
+  }
+
+  .converter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .swap-button {
+    justify-self: center;
+  }
+}
+
+@media (max-width: 460px) {
+  .calculator {
+    padding: 12px;
+  }
+
+  .topbar {
+    align-items: start;
+  }
+
+  .tabs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .scientific-grid {
+    gap: 8px;
+  }
+
+  .key {
+    min-height: 54px;
+    font-size: 0.95rem;
+  }
+
+  .memory-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .small-key {
+    min-width: 0;
+    padding: 0 4px;
+  }
+}
