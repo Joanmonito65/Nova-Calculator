@@ -587,7 +587,7 @@ function evaluateAndStore() {
     actualAnswer: actualValue,
     createdAt: new Date().toISOString(),
   });
-  state.history = state.history.slice(0, 10000);
+  state.history = state.history.slice(0, 100);
   state.lastExpression = input;
   state.lastAnswer = shownValue;
   state.expression = toExpressionNumber(shownValue);
