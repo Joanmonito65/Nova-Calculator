@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nova Calculator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell" aria-label="Nova Calculator">
+      <section class="calculator" aria-label="Calculator workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Calculator</p>
+            <h1>Nova Calculator</h1>
+          </div>
+          <div class="top-actions" aria-label="Calculator controls">
+            <button class="icon-button" type="button" id="settingsOpen" aria-label="Open settings" title="Settings">
+              Settings
+            </button>
+            <button class="icon-button" type="button" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
+              Theme
+            </button>
+            <button class="icon-button" type="button" id="copyResult" aria-label="Copy display" title="Copy display">
+              Copy
+            </button>
+          </div>
+        </header>
+
+        <section class="display" aria-live="polite">
+          <div class="mode-row">
+            <div class="segmented" role="group" aria-label="Angle mode">
+              <button type="button" class="segment is-active" data-angle="DEG">DEG</button>
+              <button type="button" class="segment" data-angle="RAD">RAD</button>
+              <button type="button" class="segment" data-angle="GRAD">GRAD</button>
+            </div>
+            <span id="memoryIndicator" class="status-pill" aria-live="polite">MEM empty</span>
+          </div>
+          <div class="expression" id="expression" aria-label="Calculation status">Expression</div>
+          <div
+            class="result"
+            id="result"
+            aria-label="Calculator display"
+            tabindex="0"
+            contenteditable="plaintext-only"
+            inputmode="text"
+            spellcheck="false"
+          >0</div>
+          <div class="word-corner is-hidden" id="wordCorner" aria-live="polite"></div>
+        </section>
+
+        <section class="notes-panel is-hidden" id="notesPanel" aria-label="Calculator notes">
+          <label for="notesInput">Notes</label>
+          <textarea id="notesInput" rows="4" placeholder="Write notes here"></textarea>
+        </section>
+
+        <nav class="tabs" aria-label="Calculator panels">
+          <button type="button" class="tab is-active" data-panel="basic">Basic</button>
+          <button type="button" class="tab" data-panel="scientific">Scientific</button>
+          <button type="button" class="tab" data-panel="convert">Convert</button>
+          <button type="button" class="tab" data-panel="history">History</button>
+        </nav>
+
+        <section class="panel is-active" id="basicPanel" data-panel-name="basic" aria-label="Basic calculator">
+          <div class="keypad basic-grid">
+            <button class="key utility" type="button" data-action="clear">AC</button>
+            <button class="key utility" type="button" data-action="backspace">Del</button>
+            <button class="key utility" type="button" data-action="percent">%</button>
+            <button class="key operator" type="button" data-insert="/">÷</button>
+
+            <button class="key" type="button" data-insert="7">7</button>
+            <button class="key" type="button" data-insert="8">8</button>
+            <button class="key" type="button" data-insert="9">9</button>
+            <button class="key operator" type="button" data-insert="*">×</button>
+
+            <button class="key" type="button" data-insert="4">4</button>
+            <button class="key" type="button" data-insert="5">5</button>
+            <button class="key" type="button" data-insert="6">6</button>
+            <button class="key operator" type="button" data-insert="-">-</button>
+
+            <button class="key" type="button" data-insert="1">1</button>
+            <button class="key" type="button" data-insert="2">2</button>
+            <button class="key" type="button" data-insert="3">3</button>
+            <button class="key operator" type="button" data-insert="+">+</button>
+
+            <button class="key" type="button" data-action="negate">+/-</button>
+            <button class="key" type="button" data-insert="0">0</button>
+            <button class="key" type="button" data-insert=".">.</button>
+            <button class="key equals" type="button" data-action="equals">=</button>
+          </div>
+        </section>
+
+        <section class="panel" id="scientificPanel" data-panel-name="scientific" aria-label="Scientific calculator">
+          <div class="memory-strip" aria-label="Memory controls">
+            <button class="small-key" type="button" data-memory="clear">MC</button>
+            <button class="small-key" type="button" data-memory="recall">MR</button>
+            <button class="small-key" type="button" data-memory="add">M+</button>
+            <button class="small-key" type="button" data-memory="subtract">M-</button>
+            <button class="small-key" type="button" data-memory="store">MS</button>
+          </div>
+
+          <div class="keypad scientific-grid">
+            <button class="key utility" type="button" data-action="clear">AC</button>
+            <button class="key utility" type="button" data-action="backspace">Del</button>
+            <button class="key utility" type="button" data-insert="(">(</button>
+            <button class="key utility" type="button" data-insert=")">)</button>
+            <button class="key operator" type="button" data-insert="/">÷</button>
+
+            <button class="key function" type="button" data-fn="sin">sin</button>
+            <button class="key function" type="button" data-fn="cos">cos</button>
+            <button class="key function" type="button" data-fn="tan">tan</button>
+            <button class="key function" type="button" data-insert="^">x^y</button>
+            <button class="key operator" type="button" data-insert="*">×</button>
+
+            <button class="key function" type="button" data-fn="asin">asin</button>
+            <button class="key function" type="button" data-fn="acos">acos</button>
+            <button class="key function" type="button" data-fn="atan">atan</button>
+            <button class="key function" type="button" data-action="square">x^2</button>
+            <button class="key operator" type="button" data-insert="-">-</button>
+
+            <button class="key function" type="button" data-fn="sqrt">sqrt</button>
+            <button class="key function" type="button" data-fn="ln">ln</button>
+            <button class="key function" type="button" data-fn="log">log</button>
+            <button class="key function" type="button" data-action="factorial">n!</button>
+            <button class="key operator" type="button" data-insert="+">+</button>
+
+            <button class="key" type="button" data-insert="7">7</button>
+            <button class="key" type="button" data-insert="8">8</button>
+            <button class="key" type="button" data-insert="9">9</button>
+            <button class="key function" type="button" data-action="reciprocal">1/x</button>
+            <button class="key utility" type="button" data-action="percent">%</button>
+
+            <button class="key" type="button" data-insert="4">4</button>
+            <button class="key" type="button" data-insert="5">5</button>
+            <button class="key" type="button" data-insert="6">6</button>
+            <button class="key constant" type="button" data-insert="pi">π</button>
+            <button class="key constant" type="button" data-insert="e">e</button>
+
+            <button class="key" type="button" data-insert="1">1</button>
+            <button class="key" type="button" data-insert="2">2</button>
+            <button class="key" type="button" data-insert="3">3</button>
+            <button class="key" type="button" data-action="negate">+/-</button>
+            <button class="key function" type="button" data-action="random">rand</button>
+
+            <button class="key wide" type="button" data-insert="0">0</button>
+            <button class="key" type="button" data-insert=".">.</button>
+            <button class="key equals wide" type="button" data-action="equals">=</button>
+          </div>
+        </section>
+
+        <section class="panel" id="convertPanel" data-panel-name="convert" aria-label="Unit converter">
+          <div class="converter">
+            <div class="field-row">
+              <label for="converterType">Type</label>
+              <select id="converterType">
+                <option value="length">Length</option>
+                <option value="weight">Weight</option>
+                <option value="temperature">Temperature</option>
+                <option value="time">Time</option>
+                <option value="speed">Speed</option>
+                <option value="pressure">Pressure</option>
+                <option value="area">Area</option>
+                <option value="volume">Volume</option>
+                <option value="energy">Energy</option>
+                <option value="power">Power</option>
+                <option value="data">Data</option>
+                <option value="money">Money</option>
+              </select>
+            </div>
+
+            <div class="converter-grid">
+              <label class="input-card" for="converterInput">
+                <span>From</span>
+                <input id="converterInput" type="text" inputmode="decimal" value="1" />
+                <select id="fromUnit"></select>
+              </label>
+
+              <button class="swap-button" type="button" id="swapUnits" aria-label="Swap units" title="Swap units">Swap</button>
+
+              <label class="input-card" for="converterOutput">
+                <span>To</span>
+                <input id="converterOutput" type="text" inputmode="decimal" value="0.01" />
+                <select id="toUnit"></select>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="historyPanel" data-panel-name="history" aria-label="Calculation history">
+          <div class="history-toolbar">
+            <span id="historyCount">No calculations yet</span>
+            <div class="history-actions">
+              <button class="text-button" type="button" id="selectHistory">Select</button>
+              <button class="text-button is-hidden" type="button" id="selectAllHistory">Select All</button>
+              <button class="text-button danger is-hidden" type="button" id="deleteSelectedHistory">Delete</button>
+              <button class="text-button danger" type="button" id="clearHistory">Clear</button>
+            </div>
+          </div>
+          <ol class="history-list" id="historyList"></ol>
+        </section>
+      </section>
+    </main>
+
+    <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true" aria-label="Settings">
+      <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <header class="settings-header">
+          <div>
+            <p class="eyebrow">Settings</p>
+            <h2 id="settingsTitle">Customize</h2>
+          </div>
+          <button class="icon-button" type="button" id="settingsClose" aria-label="Close settings">Close</button>
+        </header>
+
+        <section class="settings-section">
+          <h3>Answer Format</h3>
+          <button id="fractionToggle" class="fraction-toggle-btn" onclick="toggleFractions()">
+            <span class="dot"></span>
+            <span id="fractionToggleText">Fractions: OFF</span>
+          </button>
+          <button id="improperToggle" class="fraction-toggle-btn sub" onclick="toggleImproper()" style="display:none;">
+            <span class="dot"></span>
+            <span id="improperToggleText">Improper Fractions: OFF</span>
+          </button>
+          <button id="commasToggle" class="fraction-toggle-btn on" onclick="toggleCommas()">
+            <span class="dot"></span>
+            <span id="commasToggleText">Commas: ON</span>
+          </button>
+          <button id="separatorToggle" class="fraction-toggle-btn sub" onclick="toggleSeparator()">
+            <span class="dot"></span>
+            <span id="separatorToggleText">European Style: OFF</span>
+          </button>
+          <button id="wrongAnswersToggle" class="fraction-toggle-btn" onclick="toggleWrongAnswers()">
+            <span class="dot"></span>
+            <span id="wrongAnswersToggleText">Wrong Answers Only: OFF</span>
+          </button>
+          <button id="wordFormToggle" class="fraction-toggle-btn" onclick="toggleWordForm()">
+            <span class="dot"></span>
+            <span id="wordFormToggleText">Number Word Form: OFF</span>
+          </button>
+          <button id="wordCornerToggle" class="fraction-toggle-btn sub" onclick="toggleWordFormCorner()" style="display:none;">
+            <span class="dot"></span>
+            <span id="wordCornerToggleText">Appear in Corner: OFF</span>
+          </button>
+          <button id="pedmasToggle" class="fraction-toggle-btn on" onclick="togglePemdas()">
+            <span class="dot"></span>
+            <span id="pedmasToggleText">PEMDAS: ON</span>
+          </button>
+          <button id="autoMemoryToggle" class="fraction-toggle-btn on" onclick="toggleAutoMemory()">
+            <span class="dot"></span>
+            <span id="autoMemoryToggleText">Auto Memory: ON</span>
+          </button>
+          <button id="appendAfterAnswerToggle" class="fraction-toggle-btn on" onclick="toggleAppendAfterAnswer()">
+            <span class="dot"></span>
+            <span id="appendAfterAnswerToggleText">Append After Answer: ON</span>
+          </button>
+          <button id="trimAnswerBackspaceToggle" class="fraction-toggle-btn on" onclick="toggleTrimAnswerBackspace()">
+            <span class="dot"></span>
+            <span id="trimAnswerBackspaceToggleText">Answer Backspace: ON</span>
+          </button>
+          <button id="repeatEqualsToggle" class="fraction-toggle-btn" onclick="toggleRepeatEquals()">
+            <span class="dot"></span>
+            <span id="repeatEqualsToggleText">Repeat Equals: OFF</span>
+          </button>
+          <button id="autoCloseParenToggle" class="fraction-toggle-btn on" onclick="toggleAutoCloseParen()">
+            <span class="dot"></span>
+            <span id="autoCloseParenToggleText">Auto-Close Parentheses: ON</span>
+          </button>
+          <button id="notesToggle" class="fraction-toggle-btn" onclick="toggleNotes()">
+            <span class="dot"></span>
+            <span id="notesToggleText">Notes: OFF</span>
+          </button>
+          <button id="factorialToggle" class="fraction-toggle-btn" onclick="toggleFactorialMode()">
+            <span class="dot"></span>
+            <span id="factorialToggleText">Iterated Factorials: OFF</span>
+          </button>
+          <button id="zerosToggle" class="fraction-toggle-btn on" onclick="toggleZerosBeforeDecimals()">
+            <span class="dot"></span>
+            <span id="zerosToggleText">Zeros Before Decimals: ON</span>
+          </button>
+          <div class="settings-input-btn">
+            <span>Decimal Precision</span>
+            <input type="number" id="decimalPrecisionInput" value="15" min="0" max="15" onchange="updateDecimalPrecision(this.value)" />
+          </div>
+          <div class="settings-input-btn">
+            <span>Scientific Min</span>
+            <input type="number" id="sciThresholdInput" value="11" min="1" max="20" onchange="updateSciThreshold(this.value)" />
+          </div>
+          <div class="settings-input-btn">
+            <span>Calculation Max</span>
+            <input type="number" id="calculationMaxInput" value="1000" min="1" max="5000" onchange="updateCalculationMax(this.value)" />
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h3>Interface</h3>
+          <label class="settings-input-btn" for="themeEditorSelect">
+            <span>Theme to Customize</span>
+            <select id="themeEditorSelect">
+              <option value="light">Light Theme</option>
+              <option value="dark">Dark Theme</option>
+            </select>
+          </label>
+          <label class="settings-input-btn" for="fontSelect">
+            <span>Font</span>
+            <select id="fontSelect">
+              <option value="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Inter</option>
+              <option value="'Segoe UI', Tahoma, Geneva, sans-serif">Segoe UI</option>
+              <option value="Arial, Helvetica, sans-serif">Arial</option>
+              <option value="Verdana, Geneva, sans-serif">Verdana</option>
+              <option value="Tahoma, Geneva, sans-serif">Tahoma</option>
+              <option value="'Trebuchet MS', Arial, sans-serif">Trebuchet MS</option>
+              <option value="'Lucida Sans Unicode', 'Lucida Grande', sans-serif">Lucida Sans</option>
+              <option value="Aptos, Calibri, 'Segoe UI', sans-serif">Aptos</option>
+              <option value="Calibri, Candara, 'Segoe UI', sans-serif">Calibri</option>
+              <option value="Candara, Calibri, 'Segoe UI', sans-serif">Candara</option>
+              <option value="Corbel, 'Segoe UI', sans-serif">Corbel</option>
+              <option value="Bahnschrift, 'DIN Alternate', 'Arial Narrow', sans-serif">Bahnschrift</option>
+              <option value="'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif">Franklin Gothic</option>
+              <option value="'Century Gothic', CenturyGothic, AppleGothic, sans-serif">Century Gothic</option>
+              <option value="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Impact</option>
+              <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+              <option value="Garamond, Georgia, serif">Garamond</option>
+              <option value="Cambria, Georgia, serif">Cambria</option>
+              <option value="'Bookman Old Style', Georgia, serif">Bookman</option>
+              <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
+              <option value="'Times New Roman', Times, serif">Times New Roman</option>
+              <option value="'Courier New', Courier, monospace">Courier New</option>
+              <option value="Consolas, 'Courier New', monospace">Consolas</option>
+              <option value="'Cascadia Mono', Consolas, 'Courier New', monospace">Cascadia Mono</option>
+              <option value="'Lucida Console', Monaco, monospace">Lucida Console</option>
+              <option value="'Comic Sans MS', 'Comic Sans', cursive">Comic Sans</option>
+            </select>
+          </label>
+          <div class="color-grid">
+            <label>Background <input type="color" data-ui-color="--bg" value="#f4f7fb" /></label>
+            <label>Surface <input type="color" data-ui-color="--surface" value="#ffffff" /></label>
+            <label>Display <input type="color" data-ui-color="--surface-strong" value="#eef3f9" /></label>
+            <label>Text <input type="color" data-ui-color="--ink" value="#132034" /></label>
+            <label>Muted <input type="color" data-ui-color="--muted" value="#66758a" /></label>
+            <label>Line <input type="color" data-ui-color="--line" value="#d8e0ea" /></label>
+            <label>Accent <input type="color" data-ui-color="--accent" value="#0f8b8d" /></label>
+            <label>Accent Strong <input type="color" data-ui-color="--accent-strong" value="#0b6f70" /></label>
+            <label>Key Text <input type="color" data-ui-color="--key-text" value="#132034" /></label>
+            <label>Key Background <input type="color" data-ui-color="--key-bg" value="#ffffff" /></label>
+            <label>Button Background <input type="color" data-ui-color="--button-bg" value="#eef3f9" /></label>
+            <label>Display Text <input type="color" data-ui-color="--display-text" value="#132034" /></label>
+            <label>Display Muted <input type="color" data-ui-color="--display-muted" value="#66758a" /></label>
+            <label>Operator <input type="color" data-ui-color="--operator-bg" value="#9ccfd0" /></label>
+            <label>Operator Text <input type="color" data-ui-color="--operator-text" value="#082c2d" /></label>
+            <label>Utility Text <input type="color" data-ui-color="--utility-text" value="#ce3f58" /></label>
+            <label>Function Text <input type="color" data-ui-color="--function-text" value="#0b6f70" /></label>
+            <label>Equals <input type="color" data-ui-color="--equals-bg" value="#0f8b8d" /></label>
+            <label>Equals Text <input type="color" data-ui-color="--equals-text" value="#ffffff" /></label>
+            <label>Constants <input type="color" data-ui-color="--constant-bg" value="#ffe5ad" /></label>
+            <label>Constant Text <input type="color" data-ui-color="--constant-text" value="#835500" /></label>
+            <label>App Glow <input type="color" data-ui-color="--glow" value="#ffb000" /></label>
+            <label>Danger <input type="color" data-ui-color="--danger" value="#ce3f58" /></label>
+            <label>Shadow <input type="color" data-ui-color="--shadow-color" value="#212d44" /></label>
+          </div>
+          <div class="range-grid">
+            <label>App Width <input type="range" id="appWidthInput" min="760" max="1320" value="1120" /></label>
+            <label>App Padding <input type="range" id="appPaddingInput" min="10" max="36" value="22" /></label>
+            <label>Panel Gap <input type="range" id="panelGapInput" min="6" max="30" value="18" /></label>
+            <label>App Radius <input type="range" id="appRadiusInput" min="0" max="34" value="24" /></label>
+            <label>Button Radius <input type="range" id="buttonRadiusInput" min="0" max="24" value="16" /></label>
+            <label>Control Height <input type="range" id="controlHeightInput" min="36" max="62" value="44" /></label>
+            <label>Key Height <input type="range" id="keyHeightInput" min="46" max="92" value="72" /></label>
+            <label>Display Height <input type="range" id="displayHeightInput" min="190" max="420" value="296" /></label>
+            <label>Display Padding <input type="range" id="displayPaddingInput" min="14" max="40" value="24" /></label>
+            <label>Display Text <input type="range" id="displayTextInput" min="28" max="92" value="76" /></label>
+            <label>Key Text <input type="range" id="keyTextInput" min="14" max="26" value="20" /></label>
+            <label>Title Text <input type="range" id="titleTextInput" min="30" max="72" value="54" /></label>
+            <label>Body Text <input type="range" id="bodyTextInput" min="13" max="20" value="16" /></label>
+            <label>Button Gap <input type="range" id="buttonGapInput" min="4" max="18" value="10" /></label>
+            <label>Border Width <input type="range" id="borderWidthInput" min="0" max="4" value="1" /></label>
+            <label>Shadow Softness <input type="range" id="shadowSoftnessInput" min="50" max="100" value="84" /></label>
+          </div>
+          <button class="text-button" type="button" id="resetUiSettings">Reset UI</button>
+          <button class="text-button danger" type="button" id="resetAllSettings">Reset All Settings</button>
+        </section>
+      </div>
+    </aside>
+
+    <div class="confirm-backdrop is-hidden" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <section class="confirm-card">
+        <h2 id="confirmTitle">Delete selected calculations?</h2>
+        <p id="confirmMessage">This cannot be undone.</p>
+        <div class="confirm-actions">
+          <button class="text-button" type="button" id="cancelDelete">Cancel</button>
+          <button class="text-button danger" type="button" id="confirmDelete">Delete</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
