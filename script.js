@@ -569,10 +569,10 @@ const rangeDefaults = {
   converterPaddingInput: "22",
 };
 
-let currentMainTheme = "light";
-let editingMainTheme = "light";
-let currentTheme = "cyan";
-let editingTheme = "cyan";
+let currentMainTheme = "dark";
+let editingMainTheme = "dark";
+let currentTheme = "originalDark";
+let editingTheme = "originalDark";
 let isRestoring = true;
 let savedConverterState = null;
 
@@ -1111,6 +1111,7 @@ const units = {
       kilometer: 1000,
       inch: 0.0254,
       foot: 0.3048,
+      feet_inches: 0.3048,
       yard: 0.9144,
       mile: 1609.344,
     },
@@ -1471,6 +1472,7 @@ const unitLabels = {
   kilometer: "Kilometers",
   inch: "Inches",
   foot: "Feet",
+  feet_inches: "Feet and inches",
   yard: "Yards",
   mile: "Miles",
   milligram: "Milligrams",
@@ -2572,7 +2574,7 @@ async function updateConversion(source) {
   const targetInput = source === "from" ? converterOutput : converterInput;
   const sourceUnit = source === "from" ? fromUnit.value : toUnit.value;
   const targetUnit = source === "from" ? toUnit.value : fromUnit.value;
-  const value = parseConverterInput(sourceInput.value);
+  const value = parseConverterInput(sourceInput.value, sourceUnit);
 
   if (!Number.isFinite(value)) {
     targetInput.value = "";
@@ -2589,7 +2591,7 @@ async function updateConversion(source) {
     return;
   }
   if (requestId !== conversionRequestId) return;
-  targetInput.value = formatConverterNumber(converted);
+  targetInput.value = formatConverterNumber(converted, targetUnit);
   saveAppState();
 }
 
@@ -2617,9 +2619,10 @@ function bindConverterInput(input, source) {
     }
 
     if (!event.inputType.startsWith("insert")) return;
+    const unitName = getConverterInputUnit(source);
     const text = event.data || "";
     const lowerText = text.toLowerCase();
-    if (text === "." || text === ",") {
+    if ((text === "." || text === ",") && !isFeetInchesUnit(unitName)) {
       event.preventDefault();
       insertConverterText(input, source, getConverterDecimalSeparator());
       return;
@@ -2632,26 +2635,31 @@ function bindConverterInput(input, source) {
     }
 
     const nextValue = getInputValueAfterEdit(input, text);
-    if (!isValidConverterInput(nextValue)) event.preventDefault();
+    if (!isValidConverterInput(nextValue, unitName)) event.preventDefault();
   });
 
   input.addEventListener("paste", (event) => {
     event.preventDefault();
     const text = event.clipboardData.getData("text/plain");
+    const unitName = getConverterInputUnit(source);
     const nextValue = getInputValueAfterEdit(input, text);
-    if (!isValidConverterInput(nextValue)) return;
+    if (!isValidConverterInput(nextValue, unitName)) return;
     input.setRangeText(text, input.selectionStart ?? input.value.length, input.selectionEnd ?? input.value.length, "end");
-    formatConverterInputElement(input);
+    formatConverterInputElement(input, { unitName });
     updateConversion(source);
   });
 
   input.addEventListener("input", () => {
-    formatConverterInputElement(input);
+    formatConverterInputElement(input, { unitName: getConverterInputUnit(source) });
     updateConversion(source);
   });
 
   input.addEventListener("blur", () => {
-    formatConverterInputElement(input, { preserveCaret: false });
+    formatConverterInputElement(input, {
+      preserveCaret: false,
+      unitName: getConverterInputUnit(source),
+      normalizeCompound: true,
+    });
     updateConversion(source);
   });
 }
@@ -2662,7 +2670,16 @@ function getInputValueAfterEdit(input, text) {
   return `${input.value.slice(0, start)}${text}${input.value.slice(end)}`;
 }
 
-function isValidConverterInput(value) {
+function getConverterInputUnit(source) {
+  return source === "from" ? fromUnit.value : toUnit.value;
+}
+
+function isFeetInchesUnit(unitName) {
+  return unitName === "feet_inches";
+}
+
+function isValidConverterInput(value, unitName = null) {
+  if (isFeetInchesUnit(unitName)) return /^[+\-]?[0-9a-z\s.,'"′″+-]*$/i.test(String(value));
   return isValidConverterCanonical(canonicalizeConverterText(value));
 }
 
@@ -2671,7 +2688,12 @@ function sanitizeConverterInput(value) {
   return isValidConverterCanonical(canonical) ? canonical : "";
 }
 
-function parseConverterInput(value) {
+function parseConverterInput(value, unitName = null) {
+  if (isFeetInchesUnit(unitName)) return parseFeetInchesInput(value);
+  return parseConverterNumberInput(value);
+}
+
+function parseConverterNumberInput(value) {
   const canonical = sanitizeConverterInput(value);
   const sign = canonical.startsWith("-") ? -1 : 1;
   const body = canonical.replace(/^[+-]/, "");
@@ -2684,10 +2706,60 @@ function parseConverterInput(value) {
   return Number.isFinite(number) ? number : NaN;
 }
 
+function parseFeetInchesInput(value) {
+  let text = String(value)
+    .trim()
+    .toLowerCase()
+    .replaceAll("′", "'")
+    .replaceAll("″", "\"");
+
+  if (!text) return NaN;
+
+  const sign = text.startsWith("-") ? -1 : 1;
+  text = text.replace(/^[+-]/, "").trim();
+
+  if (!/[a-df-z'"\s]/i.test(text)) {
+    const decimalFeet = parseConverterNumberInput(`${sign < 0 ? "-" : ""}${text}`);
+    return Number.isFinite(decimalFeet) ? decimalFeet : NaN;
+  }
+
+  let feet = 0;
+  let inches = 0;
+  let foundPart = false;
+  const feetMatch = text.match(/([0-9][0-9.,]*)\s*(?:ft|feet|foot|')/i);
+  const inchMatch = text.match(/([0-9][0-9.,]*)\s*(?:in|inch|inches|")/i);
+
+  if (feetMatch) {
+    feet = parseConverterNumberInput(feetMatch[1]);
+    foundPart = true;
+  }
+
+  if (inchMatch) {
+    inches = parseConverterNumberInput(inchMatch[1]);
+    foundPart = true;
+  }
+
+  if (!foundPart) {
+    const numbers = text.match(/[0-9][0-9.,]*/g) || [];
+    if (numbers.length >= 2) {
+      feet = parseConverterNumberInput(numbers[0]);
+      inches = parseConverterNumberInput(numbers[1]);
+      foundPart = true;
+    } else if (numbers.length === 1) {
+      feet = parseConverterNumberInput(numbers[0]);
+      foundPart = true;
+    }
+  }
+
+  if (!foundPart || !Number.isFinite(feet) || !Number.isFinite(inches)) return NaN;
+  return sign * (feet + inches / 12);
+}
+
 function insertConverterConstant(input, source, constant) {
+  const unitName = getConverterInputUnit(source);
   const nextValue = getInputValueAfterEdit(input, constant);
 
-  if (isValidConverterInput(nextValue)) {
+  if (isValidConverterInput(nextValue, unitName)) {
     input.setRangeText(
       constant,
       input.selectionStart ?? input.value.length,
@@ -2700,13 +2772,14 @@ function insertConverterConstant(input, source, constant) {
     input.value = `${sign}${constant}`;
   }
 
-  formatConverterInputElement(input);
+  formatConverterInputElement(input, { unitName });
   updateConversion(source);
 }
 
 function insertConverterText(input, source, text) {
+  const unitName = getConverterInputUnit(source);
   const nextValue = getInputValueAfterEdit(input, text);
-  if (!isValidConverterInput(nextValue)) return;
+  if (!isValidConverterInput(nextValue, unitName)) return;
 
   input.setRangeText(
     text,
@@ -2714,31 +2787,63 @@ function insertConverterText(input, source, text) {
     input.selectionEnd ?? input.value.length,
     "end",
   );
-  formatConverterInputElement(input);
+  formatConverterInputElement(input, { unitName });
   updateConversion(source);
 }
 
 function refreshConverterFormatting() {
-  formatConverterInputElement(converterInput, { preserveCaret: document.activeElement === converterInput });
-  formatConverterInputElement(converterOutput, { preserveCaret: document.activeElement === converterOutput });
+  formatConverterInputElement(converterInput, {
+    preserveCaret: document.activeElement === converterInput,
+    unitName: fromUnit.value,
+  });
+  formatConverterInputElement(converterOutput, {
+    preserveCaret: document.activeElement === converterOutput,
+    unitName: toUnit.value,
+  });
   updateConversion(state.converterSource);
 }
 
 function getConverterCanonicalValues() {
   return {
-    input: sanitizeConverterInput(converterInput.value),
-    output: sanitizeConverterInput(converterOutput.value),
+    input: converterInput.value,
+    output: converterOutput.value,
   };
 }
 
 function restoreConverterCanonicalValues(values) {
-  converterInput.value = formatConverterCanonical(values.input);
-  converterOutput.value = formatConverterCanonical(values.output);
+  converterInput.value = values.input;
+  converterOutput.value = values.output;
+  formatConverterInputElement(converterInput, { preserveCaret: false, unitName: fromUnit.value });
+  formatConverterInputElement(converterOutput, { preserveCaret: false, unitName: toUnit.value });
+  updateConversion(state.converterSource);
+}
+
+function handleConverterUnitChange(source) {
+  const input = source === "from" ? converterInput : converterOutput;
+  const unitName = getConverterInputUnit(source);
+
+  if (isFeetInchesUnit(unitName)) {
+    formatConverterInputElement(input, { preserveCaret: false, unitName, normalizeCompound: true });
+  } else if (/[a-z'"′″]/i.test(input.value)) {
+    const feetValue = parseFeetInchesInput(input.value);
+    if (Number.isFinite(feetValue)) input.value = formatConverterNumber(feetValue, unitName);
+  } else {
+    formatConverterInputElement(input, { preserveCaret: false, unitName });
+  }
+
   updateConversion(state.converterSource);
 }
 
 function formatConverterInputElement(input, options = {}) {
-  const { preserveCaret = true } = options;
+  const { preserveCaret = true, unitName = null, normalizeCompound = false } = options;
+  if (isFeetInchesUnit(unitName)) {
+    if (normalizeCompound) {
+      const value = parseFeetInchesInput(input.value);
+      if (Number.isFinite(value)) input.value = formatFeetInches(value);
+    }
+    return;
+  }
+
   const caretStart = input.selectionStart ?? input.value.length;
   const canonicalBeforeCaret = canonicalizeConverterText(input.value.slice(0, caretStart));
   const canonical = sanitizeConverterInput(input.value);
@@ -2771,8 +2876,30 @@ function getFormattedCaretIndex(value, canonicalLength) {
   return value.length;
 }
 
-function formatConverterNumber(value) {
+function formatConverterNumber(value, unitName = null) {
+  if (isFeetInchesUnit(unitName)) return formatFeetInches(value);
   return formatConverterCanonical(toInputNumber(value));
+}
+
+function formatFeetInches(decimalFeet) {
+  if (!Number.isFinite(decimalFeet)) return "";
+
+  const sign = decimalFeet < 0 ? "-" : "";
+  const absFeet = Math.abs(decimalFeet);
+  let wholeFeet = Math.floor(absFeet);
+  let inches = (absFeet - wholeFeet) * 12;
+  const precision = clamp(settings.decimalPrecision, 0, 15);
+  const inchPrecision = Math.min(precision, 6);
+  inches = Number(inches.toFixed(inchPrecision));
+
+  if (Math.abs(inches - 12) < 10 ** -inchPrecision) {
+    wholeFeet += 1;
+    inches = 0;
+  }
+
+  const feetText = formatConverterCanonical(String(wholeFeet));
+  const inchesText = formatConverterCanonical(toInputNumber(inches));
+  return `${sign}${feetText} ft ${inchesText} in`;
 }
 
 function formatConverterCanonical(canonical) {
@@ -2858,10 +2985,9 @@ function pickConverterDecimalSeparator(text) {
 function pickSingleConverterSeparator(text, separator) {
   const activeDecimal = getConverterDecimalSeparator();
   const activeGroup = getConverterGroupSeparator();
-  const groupedPattern = new RegExp(`^\\d{1,3}(\\${separator}\\d{3})+$`);
 
   if (separator === activeDecimal) return separator;
-  if (separator === activeGroup && groupedPattern.test(text)) return "";
+  if (separator === activeGroup) return "";
   return separator;
 }
 
@@ -3436,9 +3562,9 @@ function normalizeMainThemeName(themeName, fallback = "light") {
   return mainThemeDefaults[fallback] ? fallback : "light";
 }
 
-function normalizeThemeName(themeName, fallback = "cyan") {
+function normalizeThemeName(themeName, fallback = "originalDark") {
   if (colorThemeDefaults[themeName]) return themeName;
-  return colorThemeDefaults[fallback] ? fallback : "cyan";
+  return colorThemeDefaults[fallback] ? fallback : "originalDark";
 }
 
 function resetUiMainThemes(savedThemes = {}) {
@@ -3566,10 +3692,10 @@ function resetAll() {
   Object.assign(settings, defaultSettings);
   resetUiMainThemes();
   resetUiThemes();
-  currentMainTheme = "light";
-  editingMainTheme = "light";
-  currentTheme = "cyan";
-  editingTheme = "cyan";
+  currentMainTheme = "dark";
+  editingMainTheme = "dark";
+  currentTheme = "originalDark";
+  editingTheme = "originalDark";
   applyThemeToDocument(currentTheme, currentMainTheme);
   syncThemeControls();
   applyLanguage();
@@ -3634,7 +3760,7 @@ function loadSavedState() {
 
     currentMainTheme = normalizeMainThemeName(
       data.currentMainTheme,
-      mainThemeDefaults[data.currentTheme] ? data.currentTheme : "light",
+      mainThemeDefaults[data.currentTheme] ? data.currentTheme : "dark",
     );
     editingMainTheme = normalizeMainThemeName(
       data.editingMainTheme,
@@ -3642,7 +3768,7 @@ function loadSavedState() {
     );
     currentTheme = normalizeThemeName(
       data.currentTheme,
-      colorThemeDefaults[data.currentTheme] ? data.currentTheme : "cyan",
+      colorThemeDefaults[data.currentTheme] ? data.currentTheme : "originalDark",
     );
     editingTheme = normalizeThemeName(
       data.editingTheme,
@@ -3917,8 +4043,8 @@ copyResult.addEventListener("click", async () => {
 converterType.addEventListener("change", loadUnits);
 bindConverterInput(converterInput, "from");
 bindConverterInput(converterOutput, "to");
-fromUnit.addEventListener("change", () => updateConversion(state.converterSource));
-toUnit.addEventListener("change", () => updateConversion(state.converterSource));
+fromUnit.addEventListener("change", () => handleConverterUnitChange("from"));
+toUnit.addEventListener("change", () => handleConverterUnitChange("to"));
 swapUnits.addEventListener("click", () => {
   const previousUnit = fromUnit.value;
   fromUnit.value = toUnit.value;
